@@ -21,9 +21,13 @@ this.value = attrValue;
 }
 
 class Component {
-    constructor(renderHook) {
+    constructor(renderHook, shouldRender = true) {
         this.hookId = renderHook;
+        if (shouldRender) {
+            this.render()
+        }
     }
+    render() {}
 
     createRootElement(tag, cssClassess, attributes) {
         const rootElement = document.createElement(tag);
@@ -64,11 +68,18 @@ class ShoppingCart extends Component{
         this.cartItems = updatedItems;
     }
 
+    orderProducts() {
+        console.log('Ordering ...');
+        console.log(this.items)
+    }
+
     render() {
        const cartEl = this.createRootElement('secion', 'cart');
         cartEl.innerHTML = `
         <h2>Total: \$${0}</h2>
         <button>Order Now!</button>`;
+        const orderButton = cartEl.querySelector('button');
+        orderButton.addEventListener('click', () => this.orderProducts())
         this.totalOutput = cartEl.querySelector('h2');
         return cartEl;
     }
@@ -76,8 +87,9 @@ class ShoppingCart extends Component{
 
 class ProductItem extends Component{
     constructor(product, renderHookId) {
-        super(renderHookId)
+        super(renderHookId, false);
         this.product = product;
+        this.render();
     }
 
     addToCart() {
@@ -104,37 +116,54 @@ class ProductItem extends Component{
 }
 
 class ProductList extends Component{
-    products = [
-        new Product(
-            'A Pillow',
-            'https://m.media-amazon.com/images/I/61Ab4L6fFOL._AC_SL1000_.jpg',
-            'A soft pillow!',
-            19.99),
-        new Product(
-            'A Carpet',
-            'https://ae04.alicdn.com/kf/H8d8022a13ed64833863b29aa4662b000Y/-.jpg',
-            'A carpet which you might like - or not!',
-            89.99)
-    ];
+    #products = [];
     constructor(renderHookId) {
-        super(renderHookId);
+        super(renderHookId, false);
+        this.render();
+        this.fetchProducts();
+    }
+
+    fetchProducts() {
+        this.#products =[
+            new Product(
+                'A Pillow',
+                'https://m.media-amazon.com/images/I/61Ab4L6fFOL._AC_SL1000_.jpg',
+                'A soft pillow!',
+                19.99),
+            new Product(
+                'A Carpet',
+                'https://ae04.alicdn.com/kf/H8d8022a13ed64833863b29aa4662b000Y/-.jpg',
+                'A carpet which you might like - or not!',
+                89.99)
+        ];
+        this.renderProducts();
+    }
+
+    renderProducts () {
+        for (const prod of this.#products){
+            const productItem = new ProductItem(prod, 'prod-list');
+        }
     }
 
     render() {
-        this.createRootElement('ul', 'product-list', [new ElementAttribute('id', 'prod-list')]);
-        for (const prod of this.products){
-            const productItem = new ProductItem(prod, 'prod-list');
-            productItem.render();
+        this.createRootElement('ul', 'product-list', [
+            new ElementAttribute('id', 'prod-list')]);
+        if (this.#products && this.#products.length > 0) {
+            this.renderProducts();
         }
     }
 }
 
 class Shop {
+
+    constructor() {
+   this.render()
+    }
+
     render() {
         this.cart = new ShoppingCart('app');
-        this.cart.render();
         const productList1 = new ProductList('app');
-        productList1.render();
+
     }
 }
 
@@ -143,7 +172,6 @@ class App {
 
     static init() {
         const shop = new Shop();
-        shop.render();
         this.cart = shop.cart;
     }
 
